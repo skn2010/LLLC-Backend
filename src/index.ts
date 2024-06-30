@@ -5,7 +5,7 @@ import { connectDB, disconnectDB } from "./db/connection";
 import errorHandler from "./middlewares/error-handler.middleware";
 import router from "./routes";
 
-// Let's config the environment file (.env)
+// Let's config the environment file (.env file)
 dotenv.config();
 
 const app = express();
