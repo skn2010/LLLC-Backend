@@ -21,6 +21,7 @@ export default function verifyAccessToken(token: string) {
     });
   }
 
+  // NOTE: get data from database and verify it if the user is admin or not. (not from token)
   try {
     const secretKey = process.env.JTW_SECRET_KEY || "secret_key";
     return jwt.verify(token, secretKey) as {
