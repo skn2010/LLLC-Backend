@@ -1,7 +1,8 @@
-import mongoose, { Schema, Document, Model } from "mongoose";
+import mongoose, { Schema, Document, Model, Types } from "mongoose";
 const { String, Boolean } = Schema.Types;
 
 export type TUser = Document & {
+  _id: Types.ObjectId;
   full_name: string;
   email: string;
   contact?: string;
