@@ -6,6 +6,7 @@ const { String, Boolean, ObjectId } = Schema.Types;
 
 export type TCompany = Document & {
   name: string;
+  email: string;
   opening_time: string;
   closing_time: string;
   description: string;
@@ -17,7 +18,7 @@ export type TCompany = Document & {
     fileName: string;
     contentType: string;
   } | null;
-  location: { latitude: string; longitude: string };
+  location: { latitude: number; longitude: number };
   category: Types.ObjectId | TCategory | null;
   created_by: Types.ObjectId | TUser | null;
   updated_date: Date | null;
@@ -28,6 +29,14 @@ const companySchema = new Schema<TCompany>({
   name: {
     type: String,
     required: [true, "Company name is required."],
+  },
+  email: {
+    type: String,
+    required: true,
+    match: [
+      /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(.\w{2,3})+$/,
+      "Please fill a valid email address",
+    ],
   },
   opening_time: {
     type: String,

@@ -1,4 +1,4 @@
-import { ObjectId, UpdateQuery } from "mongoose";
+import mongoose, { UpdateQuery } from "mongoose";
 import User, { TUser } from "../models/user.model";
 import ApiError from "../utils/api-error.utils";
 import getPaginatedData from "../utils/pagination.utils";
@@ -23,7 +23,7 @@ export async function getUserList({
   );
 }
 
-export async function getUser(id: string | ObjectId) {
+export async function getUser(id: string | mongoose.Types.ObjectId) {
   const user = await User.findById(id);
 
   if (!user) {
