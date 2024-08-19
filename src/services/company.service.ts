@@ -91,7 +91,7 @@ export async function getCompanyById(companyId: mongoose.Types.ObjectId) {
 export async function getAllCompanyForDropdown() {
   const companyList = await Company.find({ is_deleted: false })
     .select("_id name created_by")
-    .populate("created_by", "_id name address");
+    .populate("created_by");
   return companyList;
 }
 

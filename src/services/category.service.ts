@@ -1,5 +1,5 @@
 import { UpdateQuery } from "mongoose";
-import Category, { TCategory } from "../models/category.modal";
+import Category, { TCategory } from "../models/category.model";
 import ApiError from "../utils/api-error.utils";
 import getPaginatedData from "../utils/pagination.utils";
 import { deleteFile } from "./backblaze.service";

@@ -9,7 +9,7 @@ export type TCategory = Document & {
     url: string;
     fileId: string;
     fileName: string;
-    contentType: string;
+    container_name: string;
   } | null;
 
   is_active: boolean;
@@ -30,7 +30,7 @@ const categorySchema = new Schema<TCategory>({
       url: String,
       fileId: String,
       fileName: String,
-      contentType: String,
+      container_name: String,
     },
     default: null,
   },

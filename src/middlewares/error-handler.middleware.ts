@@ -1,12 +1,35 @@
 import { ErrorRequestHandler, NextFunction, Request, Response } from "express";
 import ApiError from "../utils/api-error.utils";
+import * as bucket from "../services/backblaze.service";
 
 const errorHandler: ErrorRequestHandler = (
   err: ApiError,
-  _req: Request,
+  req: Request,
   res: Response,
   _next: NextFunction
 ) => {
+  /* 
+  If user's send images and our code/program uploads them in the bucket and encounter error,
+  we have to delete these images from the bucket too.
+  */
+
+  try {
+    if (req.uploadedImages) {
+      const filesToBeUploaded: Promise<{ url: string; data: any }>[] = [];
+
+      req.uploadedImages.forEach((item) => {
+        filesToBeUploaded.push(
+          bucket.deleteFile({ fileId: item.fileId, fileName: item.fileName })
+        );
+      });
+
+      Promise.all(filesToBeUploaded);
+    }
+  } catch (e) {
+    console.log("Error on images deletion:");
+    console.log(e);
+  }
+
   // Express validator errors
   if (err?.name === "EXPRESS_VALIDATION_ERROR") {
     try {

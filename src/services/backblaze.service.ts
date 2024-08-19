@@ -11,11 +11,11 @@ const b2 = new B2({
 });
 
 export async function uploadFile({
-  fileType,
+  containerName,
   file,
   originalname,
 }: {
-  fileType: string;
+  containerName: string;
   file: Express.Multer.File;
   originalname: string;
 }) {
@@ -30,7 +30,7 @@ export async function uploadFile({
     const { authorizationToken, uploadUrl } = response.data;
 
     // File name with unique name like category/aaaa.png
-    const fileName = `${fileType}/${generateUniqueName()}.${
+    const fileName = `${containerName}/${generateUniqueName()}.${
       originalname.split(".")[1]
     }`;
 

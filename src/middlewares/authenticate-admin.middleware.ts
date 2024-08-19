@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { Request, Response, NextFunction } from "express";
 import verifyAccessToken from "../lib/jwt.lib";
 import ApiError from "../utils/api-error.utils";
@@ -22,7 +23,9 @@ export default async function authenticateAdmin(
 
   try {
     const verifiedUserToken = verifyAccessToken(token.split(" ")[1] || token);
-    const userInfo = await getUser(verifiedUserToken._doc._id as string);
+    const userInfo = await getUser(
+      verifiedUserToken._doc._id as mongoose.Types.ObjectId
+    );
 
     if (!userInfo.is_admin) {
       const error = new ApiError({

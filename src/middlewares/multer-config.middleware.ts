@@ -1,24 +1,19 @@
-import { Request } from "express";
 import multer from "multer";
 
-const allowedFileTypes = ["image", "video", "audio"];
+// Configure multer storage
 const storage = multer.memoryStorage();
 
 const multerConfig = multer({
   storage,
-  fileFilter: (
-    req: Request,
-    file: Express.Multer.File,
-    cb: multer.FileFilterCallback
-  ) => {
-    const fileType = file.mimetype.split("/")[0]; // Extract the file type from the MIME type
-
-    if (allowedFileTypes.includes(fileType)) {
+  fileFilter: (_req, file, cb) => {
+    // Accept only images
+    if (file.mimetype.startsWith("image/")) {
       cb(null, true);
     } else {
-      cb(new Error("Invalid file type. Allowed types: image, video, audio."));
+      cb(new Error("Only images are allowed!"));
     }
   },
-});
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+}).array("images", 20); // Field name should match with form-data, max 20 files
 
 export default multerConfig;

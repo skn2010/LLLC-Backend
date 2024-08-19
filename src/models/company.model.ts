@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document, Model, Types } from "mongoose";
+import { TImage } from "../types";
 import type { TUser } from "./user.model";
-import type { TCategory } from "./category.modal";
+import type { TCategory } from "./category.model";
 
 const { String, Boolean, ObjectId } = Schema.Types;
 
@@ -12,12 +13,7 @@ export type TCompany = Document & {
   description: string;
   contact_number: string;
   is_deleted: boolean;
-  cover_image: {
-    url: string;
-    fileId: string;
-    fileName: string;
-    contentType: string;
-  } | null;
+  cover_image: TImage | null;
   location: { latitude: number; longitude: number };
   category: Types.ObjectId | TCategory | null;
   created_by: Types.ObjectId | TUser | null;
@@ -63,7 +59,7 @@ const companySchema = new Schema<TCompany>({
       url: String,
       fileId: String,
       fileName: String,
-      contentType: String,
+      container_name: String,
     },
     default: null,
   },
@@ -95,7 +91,7 @@ const companySchema = new Schema<TCompany>({
   updated_date: {
     type: Date,
     required: false,
-    default: null,
+    default: Date.now,
   },
 
   created_date: {
