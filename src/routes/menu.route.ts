@@ -12,24 +12,24 @@ import * as validation from "../validations/menu.validation";
 const menuRouter = Router();
 
 menuRouter.get(
-  "/:companyId",
+  "/of-company/:companyId",
   checkSchema(validation.menusOfCompanyGetSchema),
   validateSchema,
-  serviceErrorHandler(controller.getMenusOfCompany)
+  serviceErrorHandler(controller.getMenusOfCompany),
 );
 
 menuRouter.get(
   "/:menuId",
   checkSchema(validation.menuGetSchema),
   validateSchema,
-  serviceErrorHandler(controller.getMenu)
+  serviceErrorHandler(controller.getMenu),
 );
 
 menuRouter.get(
-  "/:companyId/dropdown",
+  "/of-company/:companyId/dropdown",
   checkSchema(validation.menusDropdownOfCompanyGetSchema),
   validateSchema,
-  serviceErrorHandler(controller.getMenusOfCompanyDropdown)
+  serviceErrorHandler(controller.getMenusOfCompanyDropdown),
 );
 
 menuRouter.post(
@@ -39,17 +39,17 @@ menuRouter.post(
   checkSchema(validation.menuCreateSchema),
   validateSchema,
   uploadImages("menu", 5),
-  serviceErrorHandler(controller.createMenu)
+  serviceErrorHandler(controller.createMenu),
 );
 
 menuRouter.patch(
-  "/menuId",
+  "/:menuId",
   authenticateUser,
   multerConfig,
   checkSchema(validation.menuUpdateSchema),
   validateSchema,
   uploadImages("menu", 5),
-  serviceErrorHandler(controller.updateMenu)
+  serviceErrorHandler(controller.updateMenu),
 );
 
 menuRouter.delete(
@@ -57,7 +57,7 @@ menuRouter.delete(
   authenticateUser,
   checkSchema(validation.menuDeleteSchema),
   validateSchema,
-  serviceErrorHandler(controller.deleteMenu)
+  serviceErrorHandler(controller.deleteMenu),
 );
 
 export default menuRouter;

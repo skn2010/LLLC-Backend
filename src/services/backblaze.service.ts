@@ -46,6 +46,8 @@ export async function uploadFile({
       data: newResponse.data,
     };
   } catch (e) {
+    console.error(e);
+
     throw new ApiError({
       message: "Sorry, file upload doesn't work right now.",
       statusCode: 400,

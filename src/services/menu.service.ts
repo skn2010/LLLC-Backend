@@ -1,11 +1,13 @@
 import Company from "../models/company.model";
 import Menu, { TMenu } from "../models/menu.model";
 import { TUser } from "../models/user.model";
+import { TImage } from "../types";
 import ApiError from "../utils/api-error.utils";
+import { deleteFile } from "./backblaze.service";
 
 export async function getMenu({ params }: { params: { menuId: string } }) {
   const menu = await Menu.findById(params.menuId).populate(
-    "created_by company"
+    "created_by company",
   );
   if (!menu || menu.is_deleted) {
     throw new ApiError({
@@ -54,10 +56,13 @@ export async function getMenusOfCompany({
   const searchFilter = search
     ? {
         name: { $regex: search, $options: "i" },
-        company_id: companyId,
+        company: companyId,
         is_deleted: false,
       }
-    : { company_id: companyId, is_deleted: false };
+    : {
+        company: companyId,
+        is_deleted: false,
+      };
 
   // Query the database for menus with pagination
   const menus = await Menu.find(searchFilter)
@@ -151,6 +156,17 @@ export async function updateMenu({
       name: "AUTHORIZATION_ERROR",
     });
   }
+
+  // Let's delete the images that are removed by user
+  menu.images.forEach((imageObj) => {
+    const img = (payload.images || []).find(
+      (item) => item.url === imageObj.url,
+    );
+
+    if (!img) {
+      deleteFile({ fileId: imageObj.fileId, fileName: imageObj.fileName });
+    }
+  });
 
   // Update the menu
   await menu.updateOne(payload, {

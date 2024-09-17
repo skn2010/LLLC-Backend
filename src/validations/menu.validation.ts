@@ -62,7 +62,7 @@ export const menuCreateSchema: Schema = {
         req.files.forEach((file: any) => {
           if (!allowedMimeTypes.includes(file.mimetype)) {
             throw new Error(
-              "Invalid file type. Only JPEG, JPG, and PNG are allowed."
+              "Invalid file type. Only JPEG, JPG, and PNG are allowed.",
             );
           }
         });
@@ -120,19 +120,57 @@ export const menuUpdateSchema: Schema = {
     optional: true,
     custom: {
       options: (_value, { req }) => {
-        if (!req.files || req.files.length === 0) {
-          throw new Error("At least one image is required.");
+        // WORK
+        return true;
+
+        let images = req.body.images || [];
+        if (typeof images === "object") {
+          images = [images];
         }
 
-        // Validate file type, size, etc.
-        const allowedMimeTypes = ["image/jpeg", "image/png", "image/jpg"];
-        req.files.forEach((file: any) => {
-          if (!allowedMimeTypes.includes(file.mimetype)) {
+        console.log(images);
+        console.log(typeof images);
+
+        // Ensure the array has a maximum of 5 items
+        if (images.length > 5) {
+          console.log(images);
+          throw new Error("You may include up to 5 images.");
+        }
+
+        // Parse stringified objects in the images array
+        images = images.map((item: any) => {
+          if (typeof item === "string") {
+            try {
+              return JSON.parse(item);
+            } catch (e) {
+              throw new Error("Invalid JSON format in the image data.");
+            }
+          }
+          return item;
+        });
+
+        images.forEach((item: any) => {
+          if (item.url) {
+            // Additional URL validation can go here
+          } else if (req.files && req.files.length > 0) {
+            // Validate raw image files
+            const allowedMimeTypes = ["image/jpeg", "image/png", "image/jpg"];
+            req.files.forEach((file: any) => {
+              if (!allowedMimeTypes.includes(file.mimetype)) {
+                throw new Error(
+                  "Invalid file type. Only JPEG, JPG, and PNG are allowed.",
+                );
+              }
+            });
+          } else {
             throw new Error(
-              "Invalid file type. Only JPEG, JPG, and PNG are allowed."
+              "Invalid image format. Provide either a valid URL or an image file.",
             );
           }
         });
+
+        // Replace the parsed images array back into the request body
+        req.body.images = images;
 
         return true;
       },

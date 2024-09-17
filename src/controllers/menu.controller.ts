@@ -25,13 +25,28 @@ export async function updateMenu(req: Request, res: Response) {
     locations: ["params"],
   });
 
-  const response = await service.updateMenu({
-    payload,
-    params: { menuId },
-    auth: { user: req.user },
+  console.log("--------------------------------------------");
+  console.error("hahaha");
+  console.log("--------------------------------------------");
+
+  return res.json({
+    data: {
+      old_images: payload.images,
+      new_images: req.uploadedImages || [],
+    },
+    message: "success",
   });
 
-  return res.json({ data: response, message: "Menu updated successfully." });
+  // const response = await service.updateMenu({
+  //   payload: {
+  //     ...payload,
+  //     images: [...(payload.images || []), ...(req.uploadedImages || [])],
+  //   },
+  //   params: { menuId },
+  //   auth: { user: req.user },
+  // });
+
+  // return res.json({ data: response, message: "Menu updated successfully." });
 }
 
 export async function deleteMenu(req: Request, res: Response) {
