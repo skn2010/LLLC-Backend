@@ -8,9 +8,11 @@ export default function uploadImages(
 ): RequestHandler {
   return async function (req: Request, _res: Response, next: NextFunction) {
     try {
+      
+      // Adding promises (async functions) to this attribute to hold all the promises of images uploading fn
       const filesToBeUploaded: Promise<{ url: string; data: any }>[] = [];
 
-      ((req?.files as Express.Multer.File[]) || []).forEach((item, index) => {
+      ((req?.files as Express.Multer.File[]) || []).forEach((item) => {
         filesToBeUploaded.push(
           bucket.uploadFile({
             containerName,
@@ -20,10 +22,12 @@ export default function uploadImages(
         );
       });
 
+      // Pass the controller to the next function when there is nothing to upload any images in the req object
       if (!filesToBeUploaded.length) {
         next();
       }
 
+      // Let's verify if the user send more images than expected
       if (filesToBeUploaded.length > totalNumberOfImage) {
         throw new ApiError({
           message: `You have uploaded more images (${totalNumberOfImage})`,
@@ -32,8 +36,10 @@ export default function uploadImages(
         });
       }
 
+      // Upload images to the buckets
       const response = await Promise.all(filesToBeUploaded);
 
+      // Attach the uploaded images to request object so that we can use them from other middlewares like controller or error middleware too
       req.uploadedImages = response.map((item) => ({
         url: item.url,
         fileId: item.data.fileId,
@@ -44,7 +50,6 @@ export default function uploadImages(
       next();
     } catch (e) {
       console.log(e);
-
       next(e);
     }
   };

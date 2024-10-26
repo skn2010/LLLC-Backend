@@ -1,0 +1,37 @@
+HOW TO HANDLE FILES
+
+# UPLOAD IMAGES TO BUCKET -----------------------------------------------
+IF req.files as images:
+    UPLOAD images to the bucket
+    VERIFY images (size and length)
+    SET req.uploadedImages parameters got from the bucket
+    NEXT() function
+
+
+
+# POST REQUEST HANDLE WITH THE IMAGES -------------------------------------
+UPLOAD IMAGES TO THE BUCKET
+
+IF req.data is verified:
+    SAVE data with images
+    RETURN data
+
+ELSE:
+    REMOVE images from buckets (from req.uploadedImages) => from error middleware => ERROR MIDDLEWARE
+    RETURN error message
+
+
+# PUT/PATCH REQUEST WITH THE IMAGES ---------------------------------------
+UPLOAD IMAGES TO THE BUCKET (if exist)
+
+IF req.data is verified:
+    UPDATE data to database
+    SET req.deletedImages (This is very important to set images that need to be deleted)
+    REMOVE deletedImages from the bucket
+    RETURN updated data
+
+
+ELSE:
+    REMOVE images from buckets (from req.uploadedImages) => from error middleware => ERROR MIDDLEWARE
+    RETURN error message
+

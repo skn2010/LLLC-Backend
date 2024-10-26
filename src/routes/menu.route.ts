@@ -48,7 +48,7 @@ menuRouter.patch(
   multerConfig,
   checkSchema(validation.menuUpdateSchema),
   validateSchema,
-  uploadImages("menu", 5),
+  uploadImages("menu", 5), 
   serviceErrorHandler(controller.updateMenu),
 );
 

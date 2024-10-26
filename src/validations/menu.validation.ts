@@ -81,25 +81,16 @@ export const menuUpdateSchema: Schema = {
     isString: {
       errorMessage: "Name must be a string.",
     },
-    notEmpty: {
-      errorMessage: "Name is required.",
-    },
   },
 
   description: {
     in: ["body"],
     trim: true,
     optional: true,
-    notEmpty: {
-      errorMessage: "Description is required.",
-    },
   },
 
   tag: {
     in: ["body"],
-    notEmpty: {
-      errorMessage: "Tag is required.",
-    },
     isIn: {
       options: [["NEW", "POPULAR"]],
       errorMessage: "Tag must be either 'NEW' or 'POPULAR'.",
