@@ -9,25 +9,30 @@ const errorHandler: ErrorRequestHandler = (
   _next: NextFunction
 ) => {
   /* 
-  If user's send images and our code/program uploads them in the bucket and encounter error,
+  If user's send images and our code/program uploads them in the bucket and later encounter error,
   we have to delete these images from the bucket too.
   */
 
   try {
     if (req.uploadedImages) {
-      const filesToBeUploaded: Promise<{ url: string; data: any }>[] = [];
+      const imagesToBeDeleted: Promise<{ url: string; data: any }>[] = [];
 
-      req.uploadedImages.forEach((item) => {
-        filesToBeUploaded.push(
-          bucket.deleteFile({ fileId: item.fileId, fileName: item.fileName })
-        );
-      });
+      for (const [key, value] of Object.entries(req.uploadedImages)) {
+        value.forEach((imageObject) => {
+          bucket.deleteFile({
+            fileId: imageObject.fileId,
+            fileName: imageObject.fileName,
+          });
+        });
 
-      Promise.all(filesToBeUploaded);
+        Promise.all(imagesToBeDeleted);
+      }
     }
   } catch (e) {
-    console.log("Error on images deletion:");
-    console.log(e);
+    console.error(
+      "location: error-handler.middleware, message: error while deleting images"
+    );
+    console.error(e);
   }
 
   // Express validator errors

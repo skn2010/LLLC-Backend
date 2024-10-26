@@ -1,56 +1,70 @@
 import { Request, Response, NextFunction, RequestHandler } from "express";
 import * as bucket from "../services/backblaze.service";
-import ApiError from "../utils/api-error.utils";
+import { TImage } from "../types";
 
-export default function uploadImages(
-  containerName: string,
-  totalNumberOfImage: number
-): RequestHandler {
+type Props = {
+  containerName: string;
+  fieldName: string;
+  isRequired: boolean;
+};
+
+type FilesToBeUploaded = {
+  [key: string]: Promise<{ url: string; data: any }>[];
+};
+
+export default function uploadImages(configSettings: Props[]): RequestHandler {
   return async function (req: Request, _res: Response, next: NextFunction) {
-    try {
-      
-      // Adding promises (async functions) to this attribute to hold all the promises of images uploading fn
-      const filesToBeUploaded: Promise<{ url: string; data: any }>[] = [];
+    const filesToBeUploaded: FilesToBeUploaded = {};
+    const files = req.files as { [field: string]: Express.Multer.File[] };
 
-      ((req?.files as Express.Multer.File[]) || []).forEach((item) => {
-        filesToBeUploaded.push(
+    for (const configSetting of configSettings) {
+      const fieldFiles = files[configSetting.fieldName];
+
+      // Check if required files are missing
+      if (!fieldFiles && configSetting.isRequired) {
+        return next(
+          new Error(
+            `Field ${configSetting.fieldName} is required but no files were provided.`
+          )
+        );
+      }
+
+      // Initialize the upload promises for each file
+      if (fieldFiles) {
+        filesToBeUploaded[configSetting.fieldName] = fieldFiles.map((file) =>
           bucket.uploadFile({
-            containerName,
-            file: item,
-            originalname: item.originalname,
+            containerName: configSetting.containerName,
+            file,
+            originalname: file.originalname,
           })
         );
-      });
+      }
+    }
 
-      // Pass the controller to the next function when there is nothing to upload any images in the req object
-      if (!filesToBeUploaded.length) {
-        next();
+    try {
+      const uploadedImages: {
+        [key: string]: TImage[];
+      } = {};
+
+      for (const [key, value] of Object.entries(filesToBeUploaded)) {
+        const response = await Promise.all(value);
+
+        uploadedImages[key] = response.map((item) => ({
+          url: item.url,
+          fileId: item.data.fileId,
+          fileName: item.data.fileName,
+          container_name:
+            configSettings.find((item) => item.fieldName === key.toString())
+              ?.containerName || "default",
+        }));
       }
 
-      // Let's verify if the user send more images than expected
-      if (filesToBeUploaded.length > totalNumberOfImage) {
-        throw new ApiError({
-          message: `You have uploaded more images (${totalNumberOfImage})`,
-          name: "VALIDATION_ERROR",
-          statusCode: 400,
-        });
-      }
-
-      // Upload images to the buckets
-      const response = await Promise.all(filesToBeUploaded);
-
-      // Attach the uploaded images to request object so that we can use them from other middlewares like controller or error middleware too
-      req.uploadedImages = response.map((item) => ({
-        url: item.url,
-        fileId: item.data.fileId,
-        fileName: item.data.fileName,
-        container_name: containerName,
-      }));
-
-      next();
+      req.uploadedImages = uploadedImages;
     } catch (e) {
-      console.log(e);
+      console.error(`location: upload-images.middleware, message: ${e}`);
       next(e);
     }
+
+    next();
   };
 }

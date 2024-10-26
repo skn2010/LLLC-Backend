@@ -72,12 +72,6 @@ export async function deleteFile({
 
     return response.data;
   } catch (e) {
-    console.log(e);
-
-    throw new ApiError({
-      message: "Sorry, file upload doesn't work right now.",
-      statusCode: 400,
-      name: "B2_ERROR",
-    });
+    // console.log(e);
   }
 }

@@ -53,16 +53,24 @@ export const menuCreateSchema: Schema = {
     in: ["body"],
     custom: {
       options: (_value, { req }) => {
-        if (!req.files || req.files.length === 0) {
-          throw new Error("At least one image is required.");
+        const images = req.files?.["images"];
+
+        if (!images || !images.length) {
+          throw new Error("At least one image is required to create a menu.");
+        }
+
+        if (images.length > 5) {
+          throw new Error(
+            "You cannot add more than 5 images to create a menu."
+          );
         }
 
         // Validate file type, size, etc.
         const allowedMimeTypes = ["image/jpeg", "image/png", "image/jpg"];
-        req.files.forEach((file: any) => {
+        req.files?.["images"].forEach((file: any) => {
           if (!allowedMimeTypes.includes(file.mimetype)) {
             throw new Error(
-              "Invalid file type. Only JPEG, JPG, and PNG are allowed.",
+              "Invalid file type. Only JPEG, JPG, and PNG are allowed."
             );
           }
         });
@@ -110,58 +118,62 @@ export const menuUpdateSchema: Schema = {
     in: ["body"],
     optional: true,
     custom: {
-      options: (_value, { req }) => {
-        // WORK
-        return true;
-
-        let images = req.body.images || [];
-        if (typeof images === "object") {
-          images = [images];
+      options: (value, { req }) => {
+        // Parse the stringified JSON array into a JavaScript array
+        let imageList: any = [];
+        try {
+          imageList = JSON.parse(value || "[]");
+        } catch (error) {
+          throw new Error(
+            "Invalid format for images field; it should be a valid JSON string."
+          );
         }
 
-        console.log(images);
-        console.log(typeof images);
-
-        // Ensure the array has a maximum of 5 items
-        if (images.length > 5) {
-          console.log(images);
-          throw new Error("You may include up to 5 images.");
+        if (!Array.isArray(imageList)) {
+          throw new Error("Images must be sent as a list of image object.");
         }
 
-        // Parse stringified objects in the images array
-        images = images.map((item: any) => {
-          if (typeof item === "string") {
-            try {
-              return JSON.parse(item);
-            } catch (e) {
-              throw new Error("Invalid JSON format in the image data.");
+        // Let's count the number of the un-updated images and new images
+        let numberOfUnUpdatedImages = 0;
+        const numberOfNewImages = req.files?.["images"]?.length || 0;
+
+        // When the user sends more than 5 new images for the menu, this error message will be sent
+        if (numberOfNewImages > 5) {
+          throw new Error("You are not allowed to add more than 5 images.");
+        }
+
+        imageList?.forEach((imgObject: any) => {
+          if (typeof imgObject === "object") {
+            // Verify if the image's object is right or wrong
+            if (
+              !imgObject.fileId ||
+              !imgObject.fileName ||
+              !imgObject.container_name ||
+              !imgObject.url
+            ) {
+              throw new Error(
+                "Each existing image object must contain fileId, fileName, container_name and url."
+              );
+            } else {
+              numberOfUnUpdatedImages++;
             }
           }
-          return item;
         });
 
-        images.forEach((item: any) => {
-          if (item.url) {
-            // Additional URL validation can go here
-          } else if (req.files && req.files.length > 0) {
-            // Validate raw image files
-            const allowedMimeTypes = ["image/jpeg", "image/png", "image/jpg"];
-            req.files.forEach((file: any) => {
-              if (!allowedMimeTypes.includes(file.mimetype)) {
-                throw new Error(
-                  "Invalid file type. Only JPEG, JPG, and PNG are allowed.",
-                );
-              }
-            });
-          } else {
+        // When the number of images after adding both un-updated and new images is greater than 5, this error message will be sent
+        if (numberOfNewImages + numberOfNewImages > 5) {
+          throw new Error("You are not allowed to add more than 5 images.");
+        }
+
+        // Verify the new images
+        const allowedMimeTypes = ["image/jpeg", "image/png", "image/jpg"];
+        req.files?.["images"]?.forEach((file: any) => {
+          if (!allowedMimeTypes.includes(file.mimetype)) {
             throw new Error(
-              "Invalid image format. Provide either a valid URL or an image file.",
+              "Invalid file type. Only JPEG, JPG, and PNG are allowed."
             );
           }
         });
-
-        // Replace the parsed images array back into the request body
-        req.body.images = images;
 
         return true;
       },

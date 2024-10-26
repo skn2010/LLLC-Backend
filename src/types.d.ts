@@ -3,7 +3,9 @@ import { TUser } from "./models/user.model";
 declare module "express" {
   interface Request {
     user?: TUser;
-    uploadedImages?: TImage[];
+    uploadedImages?: {
+      [key: string]: TImage[];
+    };
   }
 }
 

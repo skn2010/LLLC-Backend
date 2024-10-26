@@ -3,13 +3,14 @@ import { matchedData } from "express-validator";
 import * as service from "../services/menu.service";
 
 export async function createMenu(req: Request, res: Response) {
-  const validatedData = matchedData(req, { locations: ["body"] });
+  // Store the validated data in a payload attribute
+  const payload = matchedData(req, { locations: ["body"] });
 
   // Let's add images too if the user sends and others required data
-  validatedData.images = req?.uploadedImages || [];
-  validatedData.created_by = req?.user?._id;
+  payload.images = req?.uploadedImages?.images || [];
+  payload.created_by = req?.user?._id;
 
-  const response = await service.createMenu({ payload: validatedData });
+  const response = await service.createMenu({ payload });
 
   return res.json({
     data: response,
@@ -21,32 +22,26 @@ export async function updateMenu(req: Request, res: Response) {
   const payload = matchedData(req, { locations: ["body"] });
   payload.created_by = req.user?._id;
 
+  const parsedImages = JSON.parse(req.body?.images || "[]");
+
+  if (parsedImages.length || (req?.uploadedImages?.images || []).length) {
+    payload.images = [...parsedImages, ...(req?.uploadedImages?.images || [])];
+  }
+
   const { menuId } = matchedData(req, {
     locations: ["params"],
   });
 
-  console.log("--------------------------------------------");
-  console.error("hahaha");
-  console.log("--------------------------------------------");
-
-  return res.json({
-    data: {
-      old_images: payload.images,
-      new_images: req.uploadedImages || [],
-    },
-    message: "success",
+  const response = await service.updateMenu({
+    params: { menuId },
+    payload,
+    auth: { user: req.user },
   });
 
-  // const response = await service.updateMenu({
-  //   payload: {
-  //     ...payload,
-  //     images: [...(payload.images || []), ...(req.uploadedImages || [])],
-  //   },
-  //   params: { menuId },
-  //   auth: { user: req.user },
-  // });
-
-  // return res.json({ data: response, message: "Menu updated successfully." });
+  return res.json({
+    data: response,
+    message: "Menu updated successfully.",
+  });
 }
 
 export async function deleteMenu(req: Request, res: Response) {

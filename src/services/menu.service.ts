@@ -7,7 +7,7 @@ import { deleteFile } from "./backblaze.service";
 
 export async function getMenu({ params }: { params: { menuId: string } }) {
   const menu = await Menu.findById(params.menuId).populate(
-    "created_by company",
+    "created_by company"
   );
   if (!menu || menu.is_deleted) {
     throw new ApiError({
@@ -118,6 +118,8 @@ export async function createMenu({ payload }: { payload: Partial<TMenu> }) {
   return newMenu;
 }
 
+// Here we need auth details because we want to apply object level validation
+// It means if the menu has been created by the same user who is currently trying to update
 export async function updateMenu({
   payload,
   params,
@@ -157,24 +159,34 @@ export async function updateMenu({
     });
   }
 
-  // Let's delete the images that are removed by user
-  menu.images.forEach((imageObj) => {
-    const img = (payload.images || []).find(
-      (item) => item.url === imageObj.url,
-    );
-
-    if (!img) {
-      deleteFile({ fileId: imageObj.fileId, fileName: imageObj.fileName });
-    }
-  });
-
   // Update the menu
-  await menu.updateOne(payload, {
-    new: true,
-    runValidators: true,
-  });
+  const updatedMenu = await Menu.findOneAndUpdate(
+    { _id: params.menuId },
+    payload,
+    { new: true, runValidators: true } // Ensure it returns the updated document
+  );
 
-  return menu; // Optionally return the updated menu
+  // Let's delete the images that are removed by user
+  if (payload.images) {
+    menu?.images.forEach((imageObj) => {
+      const img = (payload.images || []).find(
+        (item) => item.url === imageObj.url
+      );
+
+      if (!img) {
+        try {
+          deleteFile({
+            fileId: imageObj.fileId,
+            fileName: imageObj.fileName,
+          });
+        } catch (e) {
+          console.log(e);
+        }
+      }
+    });
+  }
+
+  return updatedMenu;
 }
 
 export async function deleteMenu({

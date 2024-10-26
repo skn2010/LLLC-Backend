@@ -15,41 +15,45 @@ menuRouter.get(
   "/of-company/:companyId",
   checkSchema(validation.menusOfCompanyGetSchema),
   validateSchema,
-  serviceErrorHandler(controller.getMenusOfCompany),
+  serviceErrorHandler(controller.getMenusOfCompany)
 );
 
 menuRouter.get(
   "/:menuId",
   checkSchema(validation.menuGetSchema),
   validateSchema,
-  serviceErrorHandler(controller.getMenu),
+  serviceErrorHandler(controller.getMenu)
 );
 
 menuRouter.get(
   "/of-company/:companyId/dropdown",
   checkSchema(validation.menusDropdownOfCompanyGetSchema),
   validateSchema,
-  serviceErrorHandler(controller.getMenusOfCompanyDropdown),
+  serviceErrorHandler(controller.getMenusOfCompanyDropdown)
 );
 
 menuRouter.post(
   "/",
   authenticateUser,
-  multerConfig,
+  multerConfig(["images"]),
   checkSchema(validation.menuCreateSchema),
   validateSchema,
-  uploadImages("menu", 5),
-  serviceErrorHandler(controller.createMenu),
+  uploadImages([
+    { containerName: "menu", fieldName: "images", isRequired: true },
+  ]),
+  serviceErrorHandler(controller.createMenu)
 );
 
 menuRouter.patch(
   "/:menuId",
   authenticateUser,
-  multerConfig,
+  multerConfig(["images"]),
   checkSchema(validation.menuUpdateSchema),
   validateSchema,
-  uploadImages("menu", 5), 
-  serviceErrorHandler(controller.updateMenu),
+  uploadImages([
+    { containerName: "menu", fieldName: "images", isRequired: false },
+  ]),
+  serviceErrorHandler(controller.updateMenu)
 );
 
 menuRouter.delete(
@@ -57,7 +61,7 @@ menuRouter.delete(
   authenticateUser,
   checkSchema(validation.menuDeleteSchema),
   validateSchema,
-  serviceErrorHandler(controller.deleteMenu),
+  serviceErrorHandler(controller.deleteMenu)
 );
 
 export default menuRouter;
