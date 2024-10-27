@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Company, { TCompany } from "../models/company.model";
 import ApiError from "../utils/api-error.utils";
+import { deleteFile } from "./backblaze.service";
 
 export async function createCompany(
   createdBy: mongoose.Types.ObjectId,
@@ -39,22 +40,32 @@ export async function updateCompany(
   createdBy: mongoose.Types.ObjectId,
   payload: Partial<TCompany>
 ) {
-  if (payload?.name) {
-    const existedCompany = await Company.findOne({
-      name: payload.name,
-      created_by: createdBy,
-    });
+  const existedCompany = await Company.findOne({
+    name: payload.name,
+    created_by: createdBy,
+  });
 
-    if (
-      existedCompany &&
-      !(existedCompany?._id as mongoose.Types.ObjectId).equals(id)
-    ) {
-      throw new ApiError({
-        message: "Company with this name has already existed.",
-        statusCode: 400,
-        name: "VALIDATION_ERROR",
-      });
-    }
+  if (
+    existedCompany &&
+    !(existedCompany?._id as mongoose.Types.ObjectId).equals(id)
+  ) {
+    throw new ApiError({
+      message: "Company with this name has already existed.",
+      statusCode: 400,
+      name: "VALIDATION_ERROR",
+    });
+  }
+
+  if (
+    existedCompany &&
+    existedCompany.is_deleted &&
+    (existedCompany._id as mongoose.Types.ObjectId).equals(id)
+  ) {
+    throw new ApiError({
+      message: "Company not found.",
+      name: "NOT_FOUND_ERROR",
+      statusCode: 404,
+    });
   }
 
   // Let's update
@@ -63,11 +74,17 @@ export async function updateCompany(
     runValidators: true,
   });
 
-  if (!company || company.is_deleted) {
-    throw new ApiError({
-      message: "Company not found.",
-      name: "NOT_FOUND_ERROR",
-      statusCode: 404,
+  // Let's delete old cover image
+  if (
+    payload.cover_image &&
+    existedCompany?.cover_image &&
+    payload.cover_image.url !== existedCompany.cover_image.url
+  ) {
+    deleteFile({
+      fileId: existedCompany?.cover_image.fileId,
+      fileName: existedCompany?.cover_image.fileName,
+    }).catch((e) => {
+      console.log(e, " IMAGE_DELETE_ERROR");
     });
   }
 

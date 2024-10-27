@@ -1,4 +1,4 @@
-import { UpdateQuery } from "mongoose";
+import { UpdateQuery, Types } from "mongoose";
 import Category, { TCategory } from "../models/category.model";
 import ApiError from "../utils/api-error.utils";
 import getPaginatedData from "../utils/pagination.utils";
@@ -81,7 +81,10 @@ export async function updateCategory(
     name: categoryFields.name,
   });
 
-  if (existingCategoryWithNewName) {
+  if (
+    existingCategoryWithNewName &&
+    !(existingCategoryWithNewName._id as Types.ObjectId).equals(categoryId)
+  ) {
     throw new ApiError({
       message: "A category with the name  has already existed.",
       statusCode: 400,
@@ -99,20 +102,6 @@ export async function updateCategory(
     });
   }
 
-  if (
-    categoryFields?.image &&
-    categoryFields?.image?.url !== categoryDetails.image?.url
-  ) {
-    if (categoryDetails.image) {
-      deleteFile({
-        fileId: categoryDetails?.image.fileId,
-        fileName: categoryDetails?.image.fileName,
-      }).catch((e) => {
-        console.log(e, " IMAGE_DELETE_ERROR");
-      });
-    }
-  }
-
   const category = await Category.findByIdAndUpdate(
     categoryId,
     categoryFields,
@@ -127,7 +116,18 @@ export async function updateCategory(
     });
   }
 
-  if (categoryFields?.image?.url !== category.image?.url) {
+  // Delete the previous image of the category
+  if (
+    categoryFields.image &&
+    categoryDetails.image &&
+    categoryFields.image.url !== categoryDetails.image?.url
+  ) {
+    deleteFile({
+      fileId: categoryDetails?.image.fileId,
+      fileName: categoryDetails?.image.fileName,
+    }).catch((e) => {
+      console.log(e, " IMAGE_DELETE_ERROR");
+    });
   }
 
   return category;

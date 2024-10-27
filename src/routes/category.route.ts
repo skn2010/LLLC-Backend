@@ -3,6 +3,9 @@ import { checkSchema } from "express-validator";
 import validateSchema from "../middlewares/validate-schema.middleware";
 import serviceErrorHandler from "../middlewares/service-error-handler.middleware";
 import authenticateAdmin from "../middlewares/authenticate-admin.middleware";
+import uploadImages from "../middlewares/upload-images.middleware";
+import multerConfig from "../middlewares/multer-config.middleware";
+
 import * as categorySchemaValidation from "../validations/category.validation";
 import * as categoryController from "../controllers/category.controller";
 
@@ -30,16 +33,24 @@ categoryRouter.get(
 categoryRouter.post(
   "/",
   authenticateAdmin,
+  multerConfig(["image"]),
   checkSchema(categorySchemaValidation.categoryCreateSchemaValidation),
   validateSchema,
+  uploadImages([
+    { containerName: "category", fieldName: "image", isRequired: false },
+  ]),
   serviceErrorHandler(categoryController.createCategory)
 );
 
 categoryRouter.patch(
   "/:categoryId",
   authenticateAdmin,
+  multerConfig(["image"]),
   checkSchema(categorySchemaValidation.categoryUpdateSchemaValidation),
   validateSchema,
+  uploadImages([
+    { containerName: "category", fieldName: "image", isRequired: false },
+  ]),
   serviceErrorHandler(categoryController.updateCategory)
 );
 

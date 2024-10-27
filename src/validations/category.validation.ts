@@ -1,4 +1,5 @@
 import { Schema } from "express-validator";
+import { TImage } from "../types";
 
 export const categoryListSchemaValidation: Schema = {
   page: {
@@ -87,21 +88,26 @@ export const categoryCreateSchemaValidation: Schema = {
     in: ["body"],
     optional: true,
     custom: {
-      options: (value) => {
-        if (!value || typeof value !== "object") {
+      options: (_value, { req }) => {
+        const image = req.files?.["image"]?.[0];
+
+        // Category image is optional field
+        if (!image) {
+          return true;
+        }
+
+        if (image.length > 1) {
           throw new Error(
-            "Image must have url, fileId, fileName, and contentType fields."
+            "You are not allowed to add more than 1 image for the category."
           );
         }
 
-        if (
-          !value?.url?.trim() ||
-          !value?.fileId?.trim() ||
-          !value?.fileName?.trim() ||
-          !value?.contentType?.trim()
-        ) {
+        // Validate file type, size, etc.
+        const allowedMimeTypes = ["image/jpeg", "image/png", "image/jpg"];
+
+        if (!allowedMimeTypes.includes(image.mimetype)) {
           throw new Error(
-            "Image must have url, fileId, fileName, and contentType fields."
+            "Invalid file type. Only JPEG, JPG, and PNG are allowed."
           );
         }
 
@@ -125,25 +131,58 @@ export const categoryUpdateSchemaValidation: Schema = {
     in: ["body"],
     optional: true,
     custom: {
-      options: (value) => {
-        if (!value || typeof value !== "object") {
-          throw new Error(
-            "Image must have url, fileId, fileName, and contentType fields."
-          );
+      options: (value, { req }) => {
+        // When the image filed is empty
+        if (!value) {
+          return true;
         }
 
+        // Parsed string image object to JS native object
+        let imgObject: TImage | null = null;
+
+        if (value) {
+          try {
+            imgObject = JSON.parse(value);
+          } catch (e) {
+            throw new Error("Category image parsed error.");
+          }
+        }
+
+        // Verify if the image object sent by user right
         if (
-          !value?.url?.trim() ||
-          !value?.fileId?.trim() ||
-          !value?.fileName?.trim() ||
-          !value?.contentType?.trim()
+          imgObject &&
+          (!imgObject.fileId ||
+            !imgObject.fileName ||
+            !imgObject.container_name ||
+            !imgObject.url)
         ) {
           throw new Error(
-            "Image must have url, fileId, fileName, and contentType fields."
+            "Each existing image object must contain fileId, fileName, container_name and url."
           );
         }
 
-        return true;
+        // If the user updates new image for the category
+        const newImage = req.files?.["image"]?.[0];
+
+        // Category image is optional field
+        if (!newImage) {
+          return true;
+        }
+
+        if (newImage.length > 1) {
+          throw new Error(
+            "You are not allowed to add more than 1 image for the category."
+          );
+        }
+
+        // Validate file type, size, etc.
+        const allowedMimeTypes = ["image/jpeg", "image/png", "image/jpg"];
+
+        if (!allowedMimeTypes.includes(newImage.mimetype)) {
+          throw new Error(
+            "Invalid file type. Only JPEG, JPG, and PNG are allowed."
+          );
+        }
       },
     },
   },
