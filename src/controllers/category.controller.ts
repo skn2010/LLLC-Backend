@@ -30,11 +30,6 @@ export async function getSingleCategory(req: Request, res: Response) {
 export async function createCategory(req: Request, res: Response) {
   const payload = matchedData(req, { locations: ["body"] });
 
-  // Set image image to the payload
-  if (req?.uploadedImages?.image?.[0]) {
-    payload.image = req.uploadedImages.image[0];
-  }
-
   const category = await categoryServices.createCategory({
     ...payload,
     created_by: req.user,
@@ -49,17 +44,6 @@ export async function createCategory(req: Request, res: Response) {
 export async function updateCategory(req: Request, res: Response) {
   const payload = matchedData(req, { locations: ["body"] });
   const params = matchedData(req, { locations: ["params"] });
-
-  // By default image field does not come with the parsed data
-  // So it needs to be parsed manually (it's custom field in express validator)
-  if (payload.image) {
-    payload.image = JSON.parse(payload.image);
-  }
-
-  // If the user sends new image for the category
-  if (req?.uploadedImages?.image?.[0]) {
-    payload.image = req.uploadedImages.image[0];
-  }
 
   const category = await categoryServices.updateCategory(
     params.categoryId,

@@ -1,5 +1,4 @@
 import { Schema } from "express-validator";
-import { TImage } from "../types";
 
 export const companyCreateSchemaValidation: Schema = {
   name: {
@@ -58,23 +57,34 @@ export const companyCreateSchemaValidation: Schema = {
 
   location: {
     in: ["body"],
+    customSanitizer: {
+      options: (value) => {
+        // Parse the JSON string into an object
+        try {
+          return JSON.parse(value);
+        } catch (e) {
+          throw new Error("Location must be a valid JSON object");
+        }
+      },
+    },
     custom: {
       options: (value) => {
         if (
           typeof value !== "object" ||
-          typeof value.latitude !== "number" ||
-          typeof value.longitude !== "number"
+          Number.isNaN(value.latitude) ||
+          Number.isNaN(value.longitude)
         ) {
           throw new Error(
             "Location must be an object containing latitude and longitude as numbers."
           );
         }
-        if (value.latitude < -90 || value.latitude > 90) {
+        if (Number(value.latitude) < -90 || Number(value.latitude) > 90) {
           throw new Error("Latitude must be between -90 and 90.");
         }
-        if (value.longitude < -180 || value.longitude > 180) {
+        if (Number(value.longitude) < -180 || Number(value.longitude) > 180) {
           throw new Error("Longitude must be between -180 and 180.");
         }
+
         return true;
       },
     },
@@ -93,32 +103,17 @@ export const companyCreateSchemaValidation: Schema = {
 
   cover_image: {
     in: ["body"],
-    optional: true,
-    custom: {
+    customSanitizer: {
       options: (_value, { req }) => {
-        const image = req.files?.["image"]?.[0];
+        const imageList = req?.uploadedImages?.cover_image || [];
 
-        // Cover image is optional field
-        if (!image) {
-          return true;
-        }
-
-        if (image.length > 1) {
+        if (imageList.length > 1) {
           throw new Error(
             "You are not allowed to add more than 1 image for the company."
           );
         }
 
-        // Validate file type, size, etc.
-        const allowedMimeTypes = ["image/jpeg", "image/png", "image/jpg"];
-
-        if (!allowedMimeTypes.includes(image.mimetype)) {
-          throw new Error(
-            "Invalid file type. Only JPEG, JPG, and PNG are allowed."
-          );
-        }
-
-        return true;
+        return imageList[0];
       },
     },
   },
@@ -179,15 +174,31 @@ export const companyUpdateSchemaValidation: Schema = {
 
   location: {
     in: ["body"],
+    customSanitizer: {
+      options: (value) => {
+        try {
+          return JSON.parse(value);
+        } catch (e) {
+          throw new Error("Location must be a valid JSON object");
+        }
+      },
+    },
     custom: {
       options: (value) => {
         if (
-          typeof value.latitude !== "string" ||
-          typeof value.longitude !== "string"
+          typeof value !== "object" ||
+          Number.isNaN(value.latitude) ||
+          Number.isNaN(value.longitude)
         ) {
           throw new Error(
-            "Location must contain latitude and longitude as strings."
+            "Location must be an object containing latitude and longitude as numbers."
           );
+        }
+        if (Number(value.latitude) < -90 || Number(value.latitude) > 90) {
+          throw new Error("Latitude must be between -90 and 90.");
+        }
+        if (Number(value.longitude) < -180 || Number(value.longitude) > 180) {
+          throw new Error("Longitude must be between -180 and 180.");
         }
         return true;
       },
@@ -197,60 +208,31 @@ export const companyUpdateSchemaValidation: Schema = {
 
   cover_image: {
     in: ["body"],
-    optional: true,
-    custom: {
+    customSanitizer: {
       options: (value, { req }) => {
-        // When the image filed is empty
-        if (!value) {
-          return true;
+        const imageList = req?.uploadedImages?.cover_image || [];
+
+        if (imageList.length > 1) {
+          throw new Error(
+            "You are not allowed to add more than 1 image for the company."
+          );
         }
 
-        // Parsed string image object to JS native object
-        let imgObject: TImage | null = null;
+        // If the user sends new image for the cover image, new image uploaded by
+        // the uploadImage middleware will be sent to matched data
+        if (imageList.length) {
+          return imageList[0];
+        }
 
+        // We just have to parse the value because it is in the form of string object like "{...}"
         if (value) {
           try {
-            imgObject = JSON.parse(value);
-          } catch (e) {
-            throw new Error("Cover image parsed error.");
+            return JSON.parse(value);
+          } catch {
+            throw new Error("Invalid image object for the cover image.");
           }
         }
-
-        // Verify if the image object sent by user right
-        if (
-          imgObject &&
-          (!imgObject.fileId ||
-            !imgObject.fileName ||
-            !imgObject.container_name ||
-            !imgObject.url)
-        ) {
-          throw new Error(
-            "Each existing image object must contain fileId, fileName, container_name and url."
-          );
-        }
-
-        // If the user updates new image for the cover image
-        const newImage = req.files?.["cover_image"]?.[0];
-
-        // Cover image is optional field
-        if (!newImage) {
-          return true;
-        }
-
-        if (newImage.length > 1) {
-          throw new Error(
-            "You are not allowed to add more than 1 image for the cover image."
-          );
-        }
-
-        // Validate file type, size, etc.
-        const allowedMimeTypes = ["image/jpeg", "image/png", "image/jpg"];
-
-        if (!allowedMimeTypes.includes(newImage.mimetype)) {
-          throw new Error(
-            "Invalid file type. Only JPEG, JPG, and PNG are allowed."
-          );
-        }
+        return undefined;
       },
     },
   },

@@ -34,11 +34,11 @@ categoryRouter.post(
   "/",
   authenticateAdmin,
   multerConfig(["image"]),
-  checkSchema(categorySchemaValidation.categoryCreateSchemaValidation),
-  validateSchema,
   uploadImages([
     { containerName: "category", fieldName: "image", isRequired: false },
   ]),
+  checkSchema(categorySchemaValidation.categoryCreateSchemaValidation),
+  validateSchema,
   serviceErrorHandler(categoryController.createCategory)
 );
 
@@ -46,11 +46,11 @@ categoryRouter.patch(
   "/:categoryId",
   authenticateAdmin,
   multerConfig(["image"]),
-  checkSchema(categorySchemaValidation.categoryUpdateSchemaValidation),
-  validateSchema,
   uploadImages([
     { containerName: "category", fieldName: "image", isRequired: false },
   ]),
+  checkSchema(categorySchemaValidation.categoryUpdateSchemaValidation),
+  validateSchema,
   serviceErrorHandler(categoryController.updateCategory)
 );
 

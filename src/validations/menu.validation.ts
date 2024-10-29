@@ -1,4 +1,5 @@
 import { Schema } from "express-validator";
+import { TImage } from "../types";
 
 export const menuCreateSchema: Schema = {
   name: {
@@ -51,31 +52,16 @@ export const menuCreateSchema: Schema = {
 
   images: {
     in: ["body"],
-    custom: {
+    customSanitizer: {
       options: (_value, { req }) => {
-        const images = req.files?.["images"];
+        const imageList = req?.uploadedImages?.images || [];
 
-        if (!images || !images.length) {
-          throw new Error("At least one image is required to create a menu.");
-        }
-
-        if (images.length > 5) {
+        if (imageList.length > 5) {
           throw new Error(
-            "You cannot add more than 5 images to create a menu."
+            "You are not allowed to add more than 5 images for the menu."
           );
         }
-
-        // Validate file type, size, etc.
-        const allowedMimeTypes = ["image/jpeg", "image/png", "image/jpg"];
-        req.files?.["images"].forEach((file: any) => {
-          if (!allowedMimeTypes.includes(file.mimetype)) {
-            throw new Error(
-              "Invalid file type. Only JPEG, JPG, and PNG are allowed."
-            );
-          }
-        });
-
-        return true;
+        return imageList;
       },
     },
   },
@@ -116,66 +102,28 @@ export const menuUpdateSchema: Schema = {
 
   images: {
     in: ["body"],
-    optional: true,
-    custom: {
+    customSanitizer: {
       options: (value, { req }) => {
-        // Parse the stringified JSON array into a JavaScript array
-        let imageList: any = [];
+        const imageList: TImage[] = [];
+
         try {
-          imageList = JSON.parse(value || "[]");
-        } catch (error) {
+          const parsedValue = JSON.parse(value || "[]");
+          imageList.push(...parsedValue);
+        } catch {
+          throw new Error("Invalid images object for the menu object.");
+        }
+
+        // Let's append new images
+        imageList.push(...(req?.uploadedImages?.images || []));
+
+        // Verify the side of the image
+
+        if (imageList.length > 5) {
           throw new Error(
-            "Invalid format for images field; it should be a valid JSON string."
+            "You are not allowed to add more than 5 images for the menu."
           );
         }
-
-        if (!Array.isArray(imageList)) {
-          throw new Error("Images must be sent as a list of image object.");
-        }
-
-        // Let's count the number of the un-updated images and new images
-        let numberOfUnUpdatedImages = 0;
-        const numberOfNewImages = req.files?.["images"]?.length || 0;
-
-        // When the user sends more than 5 new images for the menu, this error message will be sent
-        if (numberOfNewImages > 5) {
-          throw new Error("You are not allowed to add more than 5 images.");
-        }
-
-        imageList?.forEach((imgObject: any) => {
-          if (typeof imgObject === "object") {
-            // Verify if the image's object is right or wrong
-            if (
-              !imgObject.fileId ||
-              !imgObject.fileName ||
-              !imgObject.container_name ||
-              !imgObject.url
-            ) {
-              throw new Error(
-                "Each existing image object must contain fileId, fileName, container_name and url."
-              );
-            } else {
-              numberOfUnUpdatedImages++;
-            }
-          }
-        });
-
-        // When the number of images after adding both un-updated and new images is greater than 5, this error message will be sent
-        if (numberOfNewImages + numberOfNewImages > 5) {
-          throw new Error("You are not allowed to add more than 5 images.");
-        }
-
-        // Verify the new images
-        const allowedMimeTypes = ["image/jpeg", "image/png", "image/jpg"];
-        req.files?.["images"]?.forEach((file: any) => {
-          if (!allowedMimeTypes.includes(file.mimetype)) {
-            throw new Error(
-              "Invalid file type. Only JPEG, JPG, and PNG are allowed."
-            );
-          }
-        });
-
-        return true;
+        return imageList;
       },
     },
   },

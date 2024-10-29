@@ -15,11 +15,11 @@ companyRouter.post(
   "/",
   authenticateUser,
   multerConfig(["cover_image"]),
-  checkSchema(companySchemaValidation.companyCreateSchemaValidation),
-  validateSchema,
   uploadImages([
     { containerName: "company", fieldName: "cover_image", isRequired: false },
   ]),
+  checkSchema(companySchemaValidation.companyCreateSchemaValidation),
+  validateSchema,
   serviceErrorHandler(companyController.createCompany)
 );
 
@@ -27,11 +27,11 @@ companyRouter.patch(
   "/:companyId",
   authenticateUser,
   multerConfig(["cover_image"]),
-  checkSchema(companySchemaValidation.companyUpdateSchemaValidation),
-  validateSchema,
   uploadImages([
     { containerName: "company", fieldName: "cover_image", isRequired: false },
   ]),
+  checkSchema(companySchemaValidation.companyUpdateSchemaValidation),
+  validateSchema,
   serviceErrorHandler(companyController.updateCompany)
 );
 

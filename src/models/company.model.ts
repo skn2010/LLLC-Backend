@@ -61,7 +61,7 @@ const companySchema = new Schema<TCompany>({
       fileName: String,
       container_name: String,
     },
-    default: null,
+    required: [true, "Cover image by is required."],
   },
 
   is_deleted: {

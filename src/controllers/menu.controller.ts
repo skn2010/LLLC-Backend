@@ -5,13 +5,9 @@ import * as service from "../services/menu.service";
 export async function createMenu(req: Request, res: Response) {
   // Store the validated data in a payload attribute
   const payload = matchedData(req, { locations: ["body"] });
-
-  // Let's add images too if the user sends and others required data
-  payload.images = req?.uploadedImages?.images || [];
   payload.created_by = req?.user?._id;
 
   const response = await service.createMenu({ payload });
-
   return res.json({
     data: response,
     message: "Menu created successfully.",
@@ -21,12 +17,6 @@ export async function createMenu(req: Request, res: Response) {
 export async function updateMenu(req: Request, res: Response) {
   const payload = matchedData(req, { locations: ["body"] });
   payload.created_by = req.user?._id;
-
-  const parsedImages = JSON.parse(req.body?.images || "[]");
-
-  if (parsedImages.length || (req?.uploadedImages?.images || []).length) {
-    payload.images = [...parsedImages, ...(req?.uploadedImages?.images || [])];
-  }
 
   const { menuId } = matchedData(req, {
     locations: ["params"],

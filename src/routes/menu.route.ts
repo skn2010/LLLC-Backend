@@ -36,11 +36,11 @@ menuRouter.post(
   "/",
   authenticateUser,
   multerConfig(["images"]),
-  checkSchema(validation.menuCreateSchema),
-  validateSchema,
   uploadImages([
     { containerName: "menu", fieldName: "images", isRequired: true },
   ]),
+  checkSchema(validation.menuCreateSchema),
+  validateSchema,
   serviceErrorHandler(controller.createMenu)
 );
 
@@ -48,11 +48,11 @@ menuRouter.patch(
   "/:menuId",
   authenticateUser,
   multerConfig(["images"]),
-  checkSchema(validation.menuUpdateSchema),
-  validateSchema,
   uploadImages([
     { containerName: "menu", fieldName: "images", isRequired: false },
   ]),
+  checkSchema(validation.menuUpdateSchema),
+  validateSchema,
   serviceErrorHandler(controller.updateMenu)
 );
 
