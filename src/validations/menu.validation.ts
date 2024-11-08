@@ -123,6 +123,7 @@ export const menuUpdateSchema: Schema = {
             "You are not allowed to add more than 5 images for the menu."
           );
         }
+
         return imageList;
       },
     },

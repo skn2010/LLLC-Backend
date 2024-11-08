@@ -186,6 +186,8 @@ export async function updateMenu({
     });
   }
 
+  console.log(updatedMenu, "up..................");
+
   return updatedMenu;
 }
 

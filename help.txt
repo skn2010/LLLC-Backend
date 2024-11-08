@@ -35,3 +35,25 @@ ELSE:
     REMOVE images from buckets (from req.uploadedImages) => from error middleware => ERROR MIDDLEWARE
     RETURN error message
 
+
+
+#####################################
+REMAINING => allowed only some image types like jpg, png in the upload image middleware, apply the limit of the maximum images to be uploaded
+
+
+###################################
+REMAINING: WORK ON REVIEW SECTION
+
+Review model
+review_by: user
+images?: Image[]
+company_details: TCompany
+review (text): string
+specific_menu?: menu
+date: Date
+reactions:[
+    reacted_by: user
+    rating_star: number (1 -5)
+    react:[heart, like, sad, angry]
+
+]
