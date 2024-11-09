@@ -212,3 +212,15 @@ export const menusOfCompanyGetSchema: Schema = {
     optional: true,
   },
 };
+
+export const popularMenusOfCompanyGetSchema: Schema = {
+  companyId: {
+    in: ["params"],
+    isMongoId: {
+      errorMessage: "Company ID must be a valid MongoDB document ID.",
+    },
+    notEmpty: {
+      errorMessage: "Company id is required.",
+    },
+  },
+};

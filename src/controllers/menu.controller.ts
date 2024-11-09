@@ -72,6 +72,18 @@ export async function getMenusOfCompany(req: Request, res: Response) {
   return res.json(data);
 }
 
+export async function getPopularMenusOfCompany(req: Request, res: Response) {
+  const { companyId } = matchedData(req, {
+    locations: ["params"],
+  });
+
+  const data = await service.getPopularMenusOfCompany({
+    params: { companyId },
+  });
+
+  return res.json({ data });
+}
+
 export async function getMenusOfCompanyDropdown(req: Request, res: Response) {
   const { companyId } = matchedData(req, {
     locations: ["params"],
@@ -81,5 +93,5 @@ export async function getMenusOfCompanyDropdown(req: Request, res: Response) {
     params: { companyId },
   });
 
-  return res.json(data);
+  return res.json({ data });
 }

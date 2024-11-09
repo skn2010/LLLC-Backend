@@ -33,6 +33,24 @@ export async function getMenusDropdownOfCompany({
   return menus;
 }
 
+export async function getPopularMenusOfCompany({
+  params: { companyId },
+}: {
+  params: {
+    companyId: string;
+  };
+}) {
+  const menus = await Menu.find({
+    tag: "POPULAR",
+    company: companyId,
+    is_deleted: false,
+  })
+    .sort({ created_date: -1 })
+    .limit(20);
+
+  return menus;
+}
+
 export async function getMenusOfCompany({
   params,
   queries,

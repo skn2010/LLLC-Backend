@@ -19,6 +19,13 @@ menuRouter.get(
 );
 
 menuRouter.get(
+  "/popular/of-company/:companyId",
+  checkSchema(validation.popularMenusOfCompanyGetSchema),
+  validateSchema,
+  serviceErrorHandler(controller.getPopularMenusOfCompany)
+);
+
+menuRouter.get(
   "/:menuId",
   checkSchema(validation.menuGetSchema),
   validateSchema,
