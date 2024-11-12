@@ -55,5 +55,4 @@ reactions:[
     reacted_by: user
     rating_star: number (1 -5)
     react:[heart, like, sad, angry]
-
 ]
