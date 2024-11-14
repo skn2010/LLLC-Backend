@@ -1,7 +1,6 @@
 import Company from "../models/company.model";
 import Menu, { TMenu } from "../models/menu.model";
 import { TUser } from "../models/user.model";
-import { TImage } from "../types";
 import ApiError from "../utils/api-error.utils";
 import { deleteFile } from "./backblaze.service";
 

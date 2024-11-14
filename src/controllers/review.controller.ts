@@ -3,14 +3,9 @@ import { matchedData } from "express-validator";
 import * as services from "../services/review.service";
 import { TUser } from "../models/user.model";
 
-// Add statistics like total numbers of reaction such as heart, sad.... except all reactions list
-export async function getReviewsOfCompany(req: Request, res: Response) {
-  // ADD STATISTICS like total number of reaction (heart, sad,....)
-}
-
-// ------------------------------------------------------------
 export async function createReview(req: Request, res: Response) {
   const payload = matchedData(req, { locations: ["body"] });
+  payload.review_by = req.user?._id;
   const data = await services.createReview({ payload });
 
   return res
@@ -41,13 +36,50 @@ export async function deleteReview(req: Request, res: Response) {
   return res.json({ data, message: "Review deleted successfully." });
 }
 
-//-------------------------------------------------------------------------------
+export async function getReviewsOfCompany(req: Request, res: Response) {
+  const { companyId } = matchedData(req, { locations: ["params"] });
+  const { page, pageSize } = matchedData(req, { locations: ["query"] });
+
+  const response = await services.getReviewOfCompany({
+    params: { companyId },
+    queries: { page, pageSize: Number(pageSize) || 12 },
+  });
+
+  return res.json(response);
+}
+
+export async function getReviewOfMenu(req: Request, res: Response) {
+  const { menuId } = matchedData(req, { locations: ["params"] });
+  const { page, pageSize } = matchedData(req, { locations: ["query"] });
+
+  const response = await services.getReviewOfMenu({
+    params: { menuId },
+    queries: { page, pageSize: Number(pageSize) || 12 },
+  });
+
+  return res.json(response);
+}
 
 export async function reactOnReview(req: Request, res: Response) {
-  const payload = matchedData(req, { locations: ["body"] });
+  const { reviewId } = matchedData(req, { locations: ["params"] });
+  const { reactionType } = matchedData(req, { locations: ["body"] });
+
+  const response = await services.reactOnReview({
+    params: { reviewId },
+    user: req.user as TUser,
+    payload: { reactionType },
+  });
+
+  return res.json(response);
 }
 
 export async function removeReactOnReview(req: Request, res: Response) {
-  // Does not need any schema validation
-  const userId = req.user?._id;
+  const { reviewId } = matchedData(req, { locations: ["params"] });
+
+  const response = await services.removeReactionFromReview({
+    params: { reviewId },
+    user: req.user as TUser,
+  });
+
+  return res.json(response);
 }

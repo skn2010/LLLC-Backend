@@ -4,6 +4,7 @@ import { TUser } from "./user.model";
 import { TCompany } from "./company.model";
 import { TMenu } from "./menu.model";
 
+// Reaction Type Enum
 export enum ReactionType {
   HEART = "HEART",
   LIKE = "LIKE",
@@ -11,12 +12,14 @@ export enum ReactionType {
   ANGRY = "ANGRY",
 }
 
+// Reaction Schema
 type Reaction = {
-  reacted_by: mongoose.Schema.Types.ObjectId | null | TUser;
+  reacted_by: mongoose.Types.ObjectId;
   react_date: Date;
   react: ReactionType;
 };
 
+// Review Schema
 export type TReview = Document & {
   review_by: mongoose.Schema.Types.ObjectId | null | TUser;
   company: mongoose.Schema.Types.ObjectId | null | TCompany;
@@ -71,5 +74,6 @@ const reviewSchema = new Schema<TReview>({
   },
 });
 
+// Create the Review Model
 const Review = mongoose.model<TReview>("Review", reviewSchema);
 export default Review;

@@ -15,7 +15,8 @@ type FilesToBeUploaded = {
 export default function uploadImages(configSettings: Props[]): RequestHandler {
   return async function (req: Request, _res: Response, next: NextFunction) {
     const filesToBeUploaded: FilesToBeUploaded = {};
-    const files = req.files as { [field: string]: Express.Multer.File[] };
+    const files =
+      (req.files as { [field: string]: Express.Multer.File[] }) || [];
 
     for (const configSetting of configSettings) {
       const fieldFiles = files[configSetting.fieldName];

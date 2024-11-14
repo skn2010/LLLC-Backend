@@ -41,22 +41,6 @@ export const createSchema: Schema = {
     optional: true,
   },
 
-  review_by: {
-    in: ["body"],
-    isMongoId: {
-      errorMessage: "Review ID must be a valid MongoDB document ID.",
-    },
-    optional: true,
-    customSanitizer: {
-      options: (_value, { req }) => {
-        if (!req?.user?._id) {
-          throw new Error("Authentication is required.");
-        }
-        return req.user._id;
-      },
-    },
-  },
-
   images: {
     in: ["body"],
     customSanitizer: {
@@ -165,16 +149,6 @@ export const getCompanyMenuReviewSchema: Schema = {
 };
 
 export const getMenuReviewSchema: Schema = {
-  companyId: {
-    in: ["params"],
-    isMongoId: {
-      errorMessage: "Company ID must be a valid MongoDB document ID.",
-    },
-    notEmpty: {
-      errorMessage: "Company id is required.",
-    },
-  },
-
   menuId: {
     in: ["params"],
     isMongoId: {
@@ -200,8 +174,6 @@ export const getMenuReviewSchema: Schema = {
     isNumeric: {
       errorMessage: "Page size number must be a positive integer",
     },
-    notEmpty: {
-      errorMessage: "Page size number is required.",
-    },
+    optional: true,
   },
 };
