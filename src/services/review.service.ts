@@ -1,7 +1,9 @@
-import mongoose from "mongoose";
+import mongoose, { PipelineStage } from "mongoose";
 import Review, { TReview, ReactionType } from "../models/review.model";
 import { TUser } from "../models/user.model";
 import ApiError from "../utils/api-error.utils";
+import { TCompany } from "../models/company.model";
+import { TMenu } from "../models/menu.model";
 
 export async function createReview({
   payload,
@@ -73,12 +75,14 @@ export async function getMenuDetails({
 
 export async function deleteReview({
   params,
-  payload,
+  authorization,
 }: {
   params: { reviewId: string };
-  payload: { user: TUser };
+  authorization: { user: TUser };
 }) {
-  const review = await Review.findById(params.reviewId);
+  const review = await Review.findById(params.reviewId)
+    .populate("menu")
+    .populate("company");
 
   if (!review || review.is_deleted) {
     throw new ApiError({
@@ -88,8 +92,17 @@ export async function deleteReview({
     });
   }
 
-  // Object level verification (is the user requesting to delete is same one who has created this review or not)
-  if (review.review_by?.toString() !== payload.user._id.toString()) {
+  // Ensure menu and company are populated properly
+  const company = review.company as TCompany;
+  const menu = review.menu as TMenu;
+
+  // Authorization logic
+  if (
+    (company?.created_by?.toString() !== authorization.user._id.toString() ||
+      menu?.created_by?.toString() !== authorization.user._id.toString()) &&
+    !authorization.user.is_admin && // Check if the user is an admin
+    review.review_by?.toString() !== authorization.user._id.toString() // Check if the user is the one who created the review
+  ) {
     throw new ApiError({
       message: "You are not authorized to delete this review.",
       statusCode: 403,
@@ -97,6 +110,7 @@ export async function deleteReview({
     });
   }
 
+  // Mark the review as deleted
   review.is_deleted = true;
   await review.save();
 
@@ -106,6 +120,7 @@ export async function deleteReview({
 export async function getReviewOfMenu({
   params,
   queries,
+  user,
 }: {
   params: {
     menuId: string;
@@ -114,6 +129,7 @@ export async function getReviewOfMenu({
     page: number;
     pageSize: number;
   };
+  user: TUser | null;
 }) {
   const { menuId } = params;
   const { page = 1, pageSize = 10 } = queries;
@@ -130,18 +146,32 @@ export async function getReviewOfMenu({
     is_deleted: false,
   };
 
-  // Aggregation pipeline with reaction counts and pagination
-  const pipeline = [
-    { $match: filter }, // Apply the filter
+  // Aggregation pipeline with reaction counts, pagination, and sorting by creation date
+  const userId = user ? user._id : null;
+
+  const pipeline: PipelineStage[] = [
+    // Optional: Filter reviews based on other criteria
+    { $match: filter },
+
+    // Add fields for each reaction count
     {
       $addFields: {
-        totalReactions: { $size: "$reactions" }, // Count total reactions
+        totalReactions: { $size: "$reactions" },
         heartReactions: {
           $size: {
             $filter: {
               input: "$reactions",
               as: "reaction",
-              cond: { $eq: ["$$reaction.react", "heart"] }, // Replace with ReactionType.HEART if defined
+              cond: { $eq: ["$$reaction.react", "HEART"] },
+            },
+          },
+        },
+        likeReactions: {
+          $size: {
+            $filter: {
+              input: "$reactions",
+              as: "reaction",
+              cond: { $eq: ["$$reaction.react", "LIKE"] },
             },
           },
         },
@@ -150,16 +180,7 @@ export async function getReviewOfMenu({
             $filter: {
               input: "$reactions",
               as: "reaction",
-              cond: { $eq: ["$$reaction.react", "sad"] }, // Replace with ReactionType.SAD if defined
-            },
-          },
-        },
-        loveReactions: {
-          $size: {
-            $filter: {
-              input: "$reactions",
-              as: "reaction",
-              cond: { $eq: ["$$reaction.react", "love"] }, // Replace with ReactionType.LOVE if defined
+              cond: { $eq: ["$$reaction.react", "SAD"] },
             },
           },
         },
@@ -168,39 +189,61 @@ export async function getReviewOfMenu({
             $filter: {
               input: "$reactions",
               as: "reaction",
-              cond: { $eq: ["$$reaction.react", "angry"] }, // Replace with ReactionType.ANGRY if defined
+              cond: { $eq: ["$$reaction.react", "ANGRY"] },
             },
+          },
+        },
+
+        // Add field for the logged-in user's reaction type
+        reacted_type_by_user: {
+          $let: {
+            vars: {
+              userReaction: {
+                $arrayElemAt: [
+                  {
+                    $filter: {
+                      input: "$reactions",
+                      as: "reaction",
+                      cond: { $eq: ["$$reaction.reacted_by", userId] },
+                    },
+                  },
+                  0,
+                ],
+              },
+            },
+            in: { $ifNull: ["$$userReaction.react", null] },
           },
         },
       },
     },
+
+    // Join with company and user details if needed
     {
       $lookup: {
-        from: "companies", // Name of the collection where the company is stored
-        localField: "company", // Field in the reviews collection
-        foreignField: "_id", // Field in the companies collection
-        as: "company", // Alias for the populated company data
+        from: "companies",
+        localField: "company",
+        foreignField: "_id",
+        as: "company",
       },
     },
     {
       $lookup: {
-        from: "users", // Name of the collection where the review_by (user) is stored
-        localField: "review_by", // Field in the reviews collection
-        foreignField: "_id", // Field in the users collection
-        as: "review_by", // Alias for the populated user data
+        from: "users",
+        localField: "review_by",
+        foreignField: "_id",
+        as: "review_by",
       },
     },
-    {
-      $unwind: { path: "$company", preserveNullAndEmptyArrays: true }, // Unwind the company array (only one company expected)
-    },
-    {
-      $unwind: { path: "$review_by", preserveNullAndEmptyArrays: true }, // Unwind the review_by array (only one user expected)
-    },
-    { $skip: offset }, // Apply pagination
-    { $limit: pageSize }, // Apply page size
+    { $unwind: { path: "$company", preserveNullAndEmptyArrays: true } },
+    { $unwind: { path: "$review_by", preserveNullAndEmptyArrays: true } },
+
+    // Sort, paginate, and project fields as required
+    { $sort: { created_date: -1 } },
+    { $skip: offset },
+    { $limit: pageSize },
     {
       $project: {
-        reactions: 0, // Exclude the reactions array from the result
+        reactions: 0, // Optionally exclude the reactions array if not needed in the output
       },
     },
   ];
@@ -224,6 +267,7 @@ export async function getReviewOfMenu({
 export async function getReviewOfCompany({
   params,
   queries,
+  user,
 }: {
   params: {
     companyId: string;
@@ -232,6 +276,7 @@ export async function getReviewOfCompany({
     page: number;
     pageSize: number;
   };
+  user: TUser | null;
 }) {
   const { companyId } = params;
   const { page = 1, pageSize = 10 } = queries;
@@ -248,18 +293,32 @@ export async function getReviewOfCompany({
     is_deleted: false,
   };
 
-  // Aggregation pipeline with reaction counts and pagination
-  const pipeline = [
-    { $match: filter }, // Apply the filter
+  // Aggregation pipeline with reaction counts, pagination, and sorting by creation date
+  const userId = user ? user._id : null;
+
+  const pipeline: PipelineStage[] = [
+    // Filter reviews based on company ID
+    { $match: filter },
+
+    // Add fields for each reaction count
     {
       $addFields: {
-        totalReactions: { $size: "$reactions" }, // Count total reactions
+        totalReactions: { $size: "$reactions" },
         heartReactions: {
           $size: {
             $filter: {
               input: "$reactions",
               as: "reaction",
-              cond: { $eq: ["$$reaction.react", "heart"] }, // Replace with ReactionType.HEART if defined
+              cond: { $eq: ["$$reaction.react", "HEART"] },
+            },
+          },
+        },
+        likeReactions: {
+          $size: {
+            $filter: {
+              input: "$reactions",
+              as: "reaction",
+              cond: { $eq: ["$$reaction.react", "LIKE"] },
             },
           },
         },
@@ -268,16 +327,7 @@ export async function getReviewOfCompany({
             $filter: {
               input: "$reactions",
               as: "reaction",
-              cond: { $eq: ["$$reaction.react", "sad"] }, // Replace with ReactionType.SAD if defined
-            },
-          },
-        },
-        loveReactions: {
-          $size: {
-            $filter: {
-              input: "$reactions",
-              as: "reaction",
-              cond: { $eq: ["$$reaction.react", "love"] }, // Replace with ReactionType.LOVE if defined
+              cond: { $eq: ["$$reaction.react", "SAD"] },
             },
           },
         },
@@ -286,28 +336,71 @@ export async function getReviewOfCompany({
             $filter: {
               input: "$reactions",
               as: "reaction",
-              cond: { $eq: ["$$reaction.react", "angry"] }, // Replace with ReactionType.ANGRY if defined
+              cond: { $eq: ["$$reaction.react", "ANGRY"] },
             },
+          },
+        },
+
+        // Add field for the logged-in user's reaction type
+        reacted_type_by_user: {
+          $let: {
+            vars: {
+              userReaction: {
+                $arrayElemAt: [
+                  {
+                    $filter: {
+                      input: "$reactions",
+                      as: "reaction",
+                      cond: { $eq: ["$$reaction.reacted_by", userId] },
+                    },
+                  },
+                  0,
+                ],
+              },
+            },
+            in: { $ifNull: ["$$userReaction.react", null] },
           },
         },
       },
     },
-    { $skip: offset }, // Apply pagination
-    { $limit: pageSize }, // Apply page size
+
+    // Join with company and user details if needed
+    {
+      $lookup: {
+        from: "companies",
+        localField: "company",
+        foreignField: "_id",
+        as: "company",
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "review_by",
+        foreignField: "_id",
+        as: "review_by",
+      },
+    },
+    { $unwind: { path: "$company", preserveNullAndEmptyArrays: true } },
+    { $unwind: { path: "$review_by", preserveNullAndEmptyArrays: true } },
+
+    // Sort, paginate, and project fields as required
+    { $sort: { created_date: -1 } },
+    { $skip: offset },
+    { $limit: pageSize },
     {
       $project: {
-        reactions: 0, // Exclude the reactions array from the result
+        reactions: 0, // Optionally exclude the reactions array if not needed in the output
       },
     },
   ];
-
-  // Execute aggregation to get the reviews with reaction counts
+  // Execute aggregation to get the reviews with reaction counts and populated fields
   const reviews = await Review.aggregate(pipeline);
 
   // Get the total count of reviews that match the filter
   const totalCount = await Review.countDocuments(filter);
 
-  // Return the paginated result with reaction counts
+  // Return the paginated result with reaction counts and populated fields
   return {
     currentPage: page,
     pageSize,

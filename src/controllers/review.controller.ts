@@ -26,11 +26,10 @@ export async function getReviewDetails(req: Request, res: Response) {
 
 export async function deleteReview(req: Request, res: Response) {
   const params = matchedData(req, { locations: ["params"] });
-  const userId = req.user?._id;
 
   const data = await services.deleteReview({
     params: { reviewId: params.reviewId },
-    payload: { user: req.user as TUser },
+    authorization: { user: req.user as TUser },
   });
 
   return res.json({ data, message: "Review deleted successfully." });
@@ -42,6 +41,7 @@ export async function getReviewsOfCompany(req: Request, res: Response) {
 
   const response = await services.getReviewOfCompany({
     params: { companyId },
+    user: req.user || null,
     queries: { page, pageSize: Number(pageSize) || 12 },
   });
 
@@ -54,6 +54,7 @@ export async function getReviewOfMenu(req: Request, res: Response) {
 
   const response = await services.getReviewOfMenu({
     params: { menuId },
+    user: req.user || null,
     queries: { page, pageSize: Number(pageSize) || 12 },
   });
 

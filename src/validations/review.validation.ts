@@ -75,35 +75,6 @@ export const getDetailsSchema: Schema = {
   },
 };
 
-export const addReactionSchema: Schema = {
-  react_by: {
-    in: ["body"],
-    isMongoId: {
-      errorMessage: "React by ID must be a valid MongoDB document ID.",
-    },
-    optional: true,
-    customSanitizer: {
-      options: (_value, { req }) => {
-        if (!req?.user?._id) {
-          throw new Error("Authentication is required.");
-        }
-        return req.user._id;
-      },
-    },
-  },
-
-  react: {
-    in: ["body"],
-    notEmpty: {
-      errorMessage: "React is required.",
-    },
-    isIn: {
-      options: [["HEART", "LIKE", "SAD", "ANGRY"]],
-      errorMessage: "Invalid react type.",
-    },
-  },
-};
-
 export const deleteReviewSchema: Schema = {
   reviewId: {
     in: ["params"],
@@ -112,6 +83,41 @@ export const deleteReviewSchema: Schema = {
     },
     notEmpty: {
       errorMessage: "Review Id is required.",
+    },
+  },
+};
+
+export const addReactionSchema: Schema = {
+  reactionType: {
+    in: ["body"],
+    notEmpty: {
+      errorMessage: "Reaction type is required.",
+    },
+    isIn: {
+      options: [["HEART", "LIKE", "SAD", "ANGRY"]],
+      errorMessage: "Invalid reaction type.",
+    },
+  },
+
+  reviewId: {
+    in: ["params"],
+    isMongoId: {
+      errorMessage: "Review ID must be a valid MongoDB document ID.",
+    },
+    notEmpty: {
+      errorMessage: "Review id is required.",
+    },
+  },
+};
+
+export const removeReactionSchema: Schema = {
+  reviewId: {
+    in: ["params"],
+    isMongoId: {
+      errorMessage: "Review ID must be a valid MongoDB document ID.",
+    },
+    notEmpty: {
+      errorMessage: "Review id is required.",
     },
   },
 };
