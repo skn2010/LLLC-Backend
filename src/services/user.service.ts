@@ -1,5 +1,6 @@
 import mongoose, { UpdateQuery } from "mongoose";
 import User, { TUser } from "../models/user.model";
+import Review, { ReactionType } from "../models/review.model";
 import ApiError from "../utils/api-error.utils";
 import getPaginatedData from "../utils/pagination.utils";
 
@@ -69,4 +70,62 @@ export async function deleteUser(userId: string) {
   }
 
   return user;
+}
+
+// --------------------------------------------------------------------------------------------------
+
+export async function getUserStatistics({ userId }: { userId: string }) {
+  const userObjectId = new mongoose.Types.ObjectId(userId);
+
+  const reactionStats = await Review.aggregate([
+    {
+      $match: {
+        review_by: userObjectId,
+        is_deleted: false,
+      },
+    },
+    {
+      $unwind: "$reactions",
+    },
+    {
+      $group: {
+        _id: "$reactions.react",
+        totalReactions: { $sum: 1 },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        reactionCounts: { $push: { type: "$_id", count: "$totalReactions" } },
+        totalReactions: { $sum: "$totalReactions" },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        totalReactions: 1,
+        reactionCounts: {
+          $arrayToObject: {
+            $map: {
+              input: "$reactionCounts",
+              as: "reaction",
+              in: { k: "$$reaction.type", v: "$$reaction.count" },
+            },
+          },
+        },
+      },
+    },
+  ]);
+
+  return {
+    reaction: reactionStats[0] || {
+      totalReactions: 0,
+      reactionCounts: {
+        [ReactionType.HEART]: 0,
+        [ReactionType.LIKE]: 0,
+        [ReactionType.SAD]: 0,
+        [ReactionType.ANGRY]: 0,
+      },
+    },
+  };
 }

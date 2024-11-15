@@ -63,6 +63,15 @@ export const singleSchemaValidation: Schema = {
   },
 };
 
+export const userStatisticsSchemaValidation: Schema = {
+  userId: {
+    in: ["params"],
+    isMongoId: {
+      errorMessage: "User ID must be a valid MongoDB document ID.",
+    },
+  },
+};
+
 export const userUpdateSchemaValidation: Schema = {
   userId: {
     in: ["params"],

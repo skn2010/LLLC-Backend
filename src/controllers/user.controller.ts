@@ -95,3 +95,13 @@ export async function deleteUserPermanently(req: Request, res: Response) {
     message: "The account has been successfully deleted.",
   });
 }
+
+export async function getUserStatistics(req: Request, res: Response) {
+  const params = matchedData(req, { locations: ["params"] });
+
+  const response = await userServices.getUserStatistics({
+    userId: params.userId,
+  });
+
+  return res.json({ data: response });
+}

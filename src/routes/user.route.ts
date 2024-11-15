@@ -25,6 +25,14 @@ userRoute.get(
   serviceErrorHandler(userController.getSingleUser)
 );
 
+userRoute.get(
+  "/:userId/statistics",
+  authenticateUser,
+  checkSchema(userValidator.userStatisticsSchemaValidation),
+  validateSchema,
+  serviceErrorHandler(userController.getUserStatistics)
+);
+
 userRoute.patch(
   "/:userId",
   authenticateUser,
