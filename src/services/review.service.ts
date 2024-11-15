@@ -410,8 +410,6 @@ export async function getReviewOfCompany({
   };
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-
 export async function reactOnReview({
   params,
   payload,

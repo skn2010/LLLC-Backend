@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import Company, { TCompany } from "../models/company.model";
+import Review, { TReview } from "../models/review.model";
 import ApiError from "../utils/api-error.utils";
 import { deleteFile } from "./backblaze.service";
 
@@ -102,7 +103,37 @@ export async function getCompanyById(companyId: mongoose.Types.ObjectId) {
     });
   }
 
-  return company;
+  const reviewStats = await Review.aggregate([
+    {
+      $match: {
+        company: company._id,
+        is_deleted: false,
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        totalReviews: { $sum: 1 },
+        averageRating: { $avg: "$rating_star" },
+        totalRatingStars: { $sum: "$rating_star" },
+      },
+    },
+  ]);
+
+  const { totalReviews, averageRating, totalRatingStars } = reviewStats[0] || {
+    totalReviews: 0,
+    averageRating: 0,
+    totalRatingStars: 0,
+  };
+
+  return {
+    company,
+    reviewStats: {
+      totalReviews,
+      averageRating,
+      totalRatingStars,
+    },
+  };
 }
 
 export async function getAllCompanyForDropdown() {

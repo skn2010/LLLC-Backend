@@ -18,8 +18,8 @@ export async function getCompanyDropdown(_req: Request, res: Response) {
 export async function getCompanyDetails(req: Request, res: Response) {
   const params = matchedData(req, { locations: ["params"] });
 
-  const company = await companyService.getCompanyById(params.companyId);
-  res.json({ data: company });
+  const response = await companyService.getCompanyById(params.companyId);
+  res.json({ data: response.company, reviewStats: response.reviewStats });
 }
 
 export async function createCompany(req: Request, res: Response) {
