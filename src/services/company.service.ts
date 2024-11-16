@@ -165,3 +165,48 @@ export async function deleteCompany(
 
   return company;
 }
+
+export async function getCompanies({
+  page,
+  pageSize,
+  categoryId,
+  companyName,
+}: {
+  page: number;
+  pageSize: number;
+  companyName?: string;
+  categoryId?: string;
+}) {
+  const offset = (page - 1) * pageSize;
+
+  const searchFilter: any = companyName
+    ? {
+        name: { $regex: companyName, $options: "i" },
+        is_deleted: false,
+      }
+    : {
+        is_deleted: false,
+      };
+
+  if (categoryId) {
+    searchFilter.category = categoryId;
+  }
+
+  const companies = await Company.find(searchFilter)
+    .sort({ created_date: -1 })
+    .skip(offset)
+    .limit(pageSize)
+    .exec();
+
+  // Get the total count for pagination
+  const totalCount = await Company.countDocuments(searchFilter);
+
+  // Return paginated result
+  return {
+    currentPage: page,
+    pageSize,
+    totalCount,
+    totalPages: Math.ceil(totalCount / pageSize),
+    data: companies,
+  };
+}

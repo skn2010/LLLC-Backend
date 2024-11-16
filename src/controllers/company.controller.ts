@@ -62,3 +62,21 @@ export async function deleteCompany(req: Request, res: Response) {
 
   res.json({ data: company, message: "Company deleted successfully." });
 }
+
+export async function getCompanies(req: Request, res: Response) {
+  const {
+    page,
+    pageSize = 12,
+    companyName,
+    categoryId,
+  } = matchedData(req, { locations: ["query"] });
+
+  const response = await companyService.getCompanies({
+    page,
+    pageSize,
+    companyName,
+    categoryId,
+  });
+
+  return res.json(response);
+}

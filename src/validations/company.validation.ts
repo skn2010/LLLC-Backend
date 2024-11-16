@@ -261,3 +261,57 @@ export const companyDetailsGetSchemaValidation: Schema = {
     },
   },
 };
+
+export const companyListSchemaValidation: Schema = {
+  page: {
+    in: ["query"],
+    isNumeric: {
+      errorMessage: "Page must be an integer.",
+    },
+    notEmpty: {
+      errorMessage: "Page is required",
+    },
+    custom: {
+      options: (value: number) => {
+        if (!Number.isInteger(Number(value)) || Number(value) < 1) {
+          throw new Error("Page must be a positive integer greater than zero.");
+        }
+        return true;
+      },
+    },
+  },
+
+  pageSize: {
+    in: ["query"],
+    isNumeric: {
+      errorMessage: "Page size must be an integer.",
+    },
+    optional: true,
+    custom: {
+      options: (value: number) => {
+        if (!Number.isInteger(Number(value)) || Number(value) < 1) {
+          throw new Error("Page must be a positive integer greater than zero.");
+        }
+        return true;
+      },
+    },
+  },
+
+  companyName: {
+    in: ["query"],
+    isString: {
+      errorMessage: "Company name must be a string.",
+    },
+    trim: true,
+    optional: true,
+  },
+
+  categoryId: {
+    in: ["query"],
+    isString: {
+      errorMessage: "Category id must be a string.",
+    },
+    trim: true,
+    optional: true,
+  },
+};

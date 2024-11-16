@@ -11,6 +11,13 @@ import * as companyController from "../controllers/company.controller";
 
 const companyRouter = Router();
 
+companyRouter.get(
+  "/",
+  checkSchema(companySchemaValidation.companyListSchemaValidation),
+  validateSchema,
+  serviceErrorHandler(companyController.getCompanies)
+);
+
 companyRouter.post(
   "/",
   authenticateUser,

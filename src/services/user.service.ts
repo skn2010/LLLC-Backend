@@ -72,8 +72,6 @@ export async function deleteUser(userId: string) {
   return user;
 }
 
-// --------------------------------------------------------------------------------------------------
-
 export async function getUserStatistics({ userId }: { userId: string }) {
   const userObjectId = new mongoose.Types.ObjectId(userId);
 
