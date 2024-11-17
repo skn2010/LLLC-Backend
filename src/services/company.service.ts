@@ -210,3 +210,55 @@ export async function getCompanies({
     data: companies,
   };
 }
+
+export async function getPopularCompaniesByReactions() {
+  const popularCompanies = await Company.aggregate([
+    // Lookup reviews for each company
+    {
+      $lookup: {
+        from: "reviews", // MongoDB collection name for reviews
+        localField: "_id",
+        foreignField: "company",
+        as: "reviews",
+      },
+    },
+    // Filter out deleted companies
+    {
+      $match: {
+        is_deleted: false,
+      },
+    },
+    // Unwind reviews to calculate reactions
+    {
+      $unwind: {
+        path: "$reviews",
+        preserveNullAndEmptyArrays: false, // Exclude companies with no reviews
+      },
+    },
+    // Filter out deleted reviews
+    {
+      $match: {
+        "reviews.is_deleted": false,
+      },
+    },
+    // Group by company and calculate total reactions
+    {
+      $group: {
+        _id: "$_id",
+        name: { $first: "$name" }, // Include company name
+        cover_image: { $first: "$cover_image" }, // Include cover image
+        totalReactions: { $sum: { $size: "$reviews.reactions" } },
+      },
+    },
+    // Sort by total reactions in descending order
+    {
+      $sort: { totalReactions: -1 },
+    },
+    // Limit to top 24 companies
+    {
+      $limit: 24,
+    },
+  ]);
+
+  return popularCompanies;
+}

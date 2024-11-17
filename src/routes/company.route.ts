@@ -18,6 +18,11 @@ companyRouter.get(
   serviceErrorHandler(companyController.getCompanies)
 );
 
+companyRouter.get(
+  "/popular",
+  serviceErrorHandler(companyController.getPopularCompaniesBasedOnReactions)
+);
+
 companyRouter.post(
   "/",
   authenticateUser,

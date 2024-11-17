@@ -183,3 +183,23 @@ export const getMenuReviewSchema: Schema = {
     optional: true,
   },
 };
+
+export const popularReviewSchema: Schema = {
+  page: {
+    in: ["query"],
+    isNumeric: {
+      errorMessage: "Page number must be a positive integer",
+    },
+    notEmpty: {
+      errorMessage: "Page number is required.",
+    },
+  },
+
+  pageSize: {
+    in: ["query"],
+    isNumeric: {
+      errorMessage: "Page size number must be a positive integer",
+    },
+    optional: true,
+  },
+};

@@ -25,6 +25,14 @@ reviewRouter.post(
 );
 
 reviewRouter.get(
+  "/popular",
+  setUserData,
+  checkSchema(validation.popularReviewSchema),
+  validateSchema,
+  serviceErrorHandler(controller.getPopularMenus)
+);
+
+reviewRouter.get(
   "/:reviewId",
   setUserData,
   checkSchema(validation.getDetailsSchema),

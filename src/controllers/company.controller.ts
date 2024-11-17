@@ -80,3 +80,11 @@ export async function getCompanies(req: Request, res: Response) {
 
   return res.json(response);
 }
+
+export async function getPopularCompaniesBasedOnReactions(
+  req: Request,
+  res: Response
+) {
+  const response = await companyService.getPopularCompaniesByReactions();
+  return res.json({ data: response });
+}

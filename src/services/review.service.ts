@@ -497,3 +497,144 @@ export async function removeReactionFromReview({
     reviewId,
   };
 }
+
+export async function getPopularReviews({
+  queries,
+  user,
+}: {
+  queries: {
+    page: number;
+    pageSize: number;
+  };
+  user?: TUser;
+}) {
+  const { page = 1, pageSize = 12 } = queries;
+
+  // Calculate the offset for pagination
+  const offset = (page - 1) * pageSize;
+
+  const userId = user ? user._id : null;
+
+  // Filter for reviews that are not deleted
+  const filter = {
+    is_deleted: false,
+  };
+
+  const pipeline: PipelineStage[] = [
+    // Filter reviews based on the provided filter
+    { $match: filter },
+
+    // Add fields for reaction counts and user reaction
+    {
+      $addFields: {
+        totalReactions: { $size: "$reactions" },
+        heartReactions: {
+          $size: {
+            $filter: {
+              input: "$reactions",
+              as: "reaction",
+              cond: { $eq: ["$$reaction.react", "HEART"] },
+            },
+          },
+        },
+        likeReactions: {
+          $size: {
+            $filter: {
+              input: "$reactions",
+              as: "reaction",
+              cond: { $eq: ["$$reaction.react", "LIKE"] },
+            },
+          },
+        },
+        sadReactions: {
+          $size: {
+            $filter: {
+              input: "$reactions",
+              as: "reaction",
+              cond: { $eq: ["$$reaction.react", "SAD"] },
+            },
+          },
+        },
+        angryReactions: {
+          $size: {
+            $filter: {
+              input: "$reactions",
+              as: "reaction",
+              cond: { $eq: ["$$reaction.react", "ANGRY"] },
+            },
+          },
+        },
+
+        // Add field for the logged-in user's reaction type
+        reacted_type_by_user: {
+          $let: {
+            vars: {
+              userReaction: {
+                $arrayElemAt: [
+                  {
+                    $filter: {
+                      input: "$reactions",
+                      as: "reaction",
+                      cond: { $eq: ["$$reaction.reacted_by", userId] },
+                    },
+                  },
+                  0,
+                ],
+              },
+            },
+            in: { $ifNull: ["$$userReaction.react", null] },
+          },
+        },
+      },
+    },
+
+    // Join with company and user details if needed
+    {
+      $lookup: {
+        from: "companies",
+        localField: "company",
+        foreignField: "_id",
+        as: "company",
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "review_by",
+        foreignField: "_id",
+        as: "review_by",
+      },
+    },
+    { $unwind: { path: "$company", preserveNullAndEmptyArrays: true } },
+    { $unwind: { path: "$review_by", preserveNullAndEmptyArrays: true } },
+
+    // Sort by total reactions in descending order
+    { $sort: { totalReactions: -1, created_date: -1 } },
+
+    // Paginate results
+    { $skip: offset },
+    { $limit: pageSize },
+
+    // Project necessary fields
+    {
+      $project: {
+        reactions: 0, // Exclude reactions array if not needed
+      },
+    },
+  ];
+
+  // Execute the aggregation pipeline
+  const reviews = await Review.aggregate(pipeline);
+
+  // Get the total count of reviews matching the filter
+  const totalCount = await Review.countDocuments(filter);
+
+  // Return the paginated result
+  return {
+    currentPage: page,
+    pageSize,
+    totalCount,
+    totalPages: Math.ceil(totalCount / pageSize),
+    data: reviews,
+  };
+}

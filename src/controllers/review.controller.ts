@@ -84,3 +84,15 @@ export async function removeReactOnReview(req: Request, res: Response) {
 
   return res.json(response);
 }
+
+export async function getPopularMenus(req: Request, res: Response) {
+  const { page = 1, pageSize = 12 } = matchedData(req, {
+    locations: ["query"],
+  });
+
+  const response = await services.getPopularReviews({
+    queries: { page, pageSize },
+    user: req.user as TUser,
+  });
+  return res.json(response);
+}
